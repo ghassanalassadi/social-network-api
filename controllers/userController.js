@@ -8,7 +8,12 @@ module.exports = {
     },
     getOneUser(req, res) {
         User.findOne({ _id: req.params.userId })
-            .then((user) => res.json(user))
+            .select('-__v')
+            .then((user) => 
+                !user
+                    ? res.status(404).json({message: 'No user with this id!'})
+                    : res.json(user)
+            )
             .catch((err) => res.status(500).json(err));
     },
     createUser(req, res) {
