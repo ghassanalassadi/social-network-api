@@ -18,7 +18,18 @@ module.exports = {
     },
     createThought(req, res) {
         Thought.create(req.body)
-            .then((thought) => res.json(thought))
+            .then(({_id}) => {
+                return User.findOneAndUpdate(
+                    {_id: req.params.userId},
+                    {$push: {thoughts: _id}},
+                    {new: true}
+                )
+            })
+            .then((thought) => 
+                !thought
+                    ? res.status(404).json({message: 'No thought found with that id!'})
+                    : res.json(thought)
+            )
             .catch((err) => res.status(500).json(err));
     },
     editThought(req, res) {
@@ -26,11 +37,11 @@ module.exports = {
             {_id: req.params.thoughtId},
             {$set: req.body},
             {runValidators: true, new: true}
-        )
-            .then((thought) => 
-                !thought
+            )
+            .then((user) => 
+                !user
                     ? res.status(404).json({message: 'No thought found with that id!'})
-                    : res.json(thought)
+                    : res.json(user)
             )
             .catch((err) => res.status.json(err));
     },
@@ -39,8 +50,17 @@ module.exports = {
             .then((thought) => {
                 !thought
                     ? res.status(404).json({message: 'No thought found with this id!'})
-                    : res.status(200).json({message: 'Thought deleted successfully!'})
+                    : User.findOneAndUpdate(
+                        {thought: req.params.thoughtId},
+                        {$pull: {thought: req.params.thoughtId}},
+                        {new: true}
+                    )
                 }
+            )
+            .then((user) => 
+                !user
+                    ? res.status(404).json({message: 'Thought deleted but user not found!'})
+                    : res.json({message: 'Thought deleted successfully!'})
             )
             .catch((err) => res.status(500).json(err));
     },
